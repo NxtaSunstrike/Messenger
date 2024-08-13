@@ -1,0 +1,2 @@
+[console_scripts]
+faststream = faststream.__main__:cli
