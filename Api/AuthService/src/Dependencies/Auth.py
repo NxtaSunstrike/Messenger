@@ -23,7 +23,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from Shemas.User.CreateUser import CreateUser
 from Shemas.User.CreateUser import ConfirmUser as Confirm
+from Shemas.User.CreateUser import Login as UserLogin
 
+class Register:
+    def __init__(self) -> None:
+        pass
+
+    async def __call__(
+        self, User: CreateUser
+    )-> CreateUser:
+        return User
+    
+
+class Login:
+    def __init__(self) -> None:
+        pass
+
+    async def __call__(
+        self, User: UserLogin
+    )-> UserLogin:
+        return User
+        
+       
 class CheckUser:
     def __init__(self) -> None:
         pass
