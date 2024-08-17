@@ -2,45 +2,35 @@ import json
 
 from typing import Dict
 
-import redis.asyncio as AIORedis
-
-from Settings.Config import Config
-
-from Utils.JsonUtils import BytesEncoder
+from redis.asyncio import Redis
 
 
-class RedisClient:
+class Service:
 
-    def __init__(self, url: str) -> None:
-        self.Redis = AIORedis.from_url(url)
+    def __init__(self, redis: Redis) -> None:
+        self._redis = redis
 
 
-    async def CreateItem(self, key: str, value: Dict) -> None:
+    async def CreateUser(self, key: str, value: Dict) -> None:
         result = json.dumps(value)
-        await self.Redis.set(key, result)
+        await self._redis.set(name = key, value = result)
         return dict(
             message = f'Item {key} created successful'
         )
     
     
-    async def getItem(self, key: str) -> json:
-        result = await self.Redis.get(key)
+    async def getUser(self, key: str) -> json:
+        result = await self._redis.get(name = key)
         if result:
             result = json.loads(result)
         return result
     
 
-    async def DeleteItem(self, key: str) -> None:
-        await self.Redis.delete(key)
+    async def DeleteUser(self, key: str) -> None:
+        await self._redis.delete(key)
         return dict(
             message = f'Item {key} deleted successful'
         )
     
-AuthCache = RedisClient('redis://{HOST}:{port}/1'.format(
-    HOST = Config.REDIS_HOST,
-    port = Config.REDIS_PORT
-))
-UserCache = RedisClient('redis://{HOST}:{port}/2'.format(
-    HOST = Config.REDIS_HOST,
-    port = Config.REDIS_PORT
-))
+
+    

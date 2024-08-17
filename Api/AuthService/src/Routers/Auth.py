@@ -1,33 +1,129 @@
+from typing import Dict
+from datetime import datetime
+from uuid import uuid4
+
+import os
+
 from fastapi import APIRouter
 from fastapi import Depends
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.responses import Response
+from fastapi import Request
 
-from Dependencies.Auth import createUser
-from Dependencies.Auth import CreateUser
-from Dependencies.Auth import ConfirmUser
-from Dependencies.Auth import confirmUser
-from Dependencies.Auth import LoginUser
-from Dependencies.Auth import loginUser
+from random import sample
+
+from Shemas.User.CreateUser import CreateUser as Create
+from Shemas.User.CreateUser import ConfirmUser as Confirm
+from Shemas.User.CreateUser import Login
+
+from dependency_injector.wiring import inject, Provide
+
+from Di.Containers import PSQLContainer
+from Di.Containers import RedisContainer
+from Di.Containers import SessionContainer
+from Di.Containers import JWTContainer
+
+from Db.Postgres.Crud.Services import UserService
+from Db.Redis.RedisClient import Service
+
+from Utils.Jwt import JWTAuth
 
 
-AuthRouter = APIRouter(
-    prefix="/auth",
-    tags=["Auth"],
-)
+router = APIRouter()
 
-@AuthRouter.post("/CreateUser")
+@router.post("/CreateUser", response_model=None)
+@inject
 async def CreateUser(
-    create: CreateUser = Depends(createUser)
+    User: Create, 
+    PSQLService: UserService = Depends(Provide[PSQLContainer.UserSevice]),
+    RedisService: Service = Depends(Provide[RedisContainer.Service]),
+    AuthSession: Service = Depends(Provide[SessionContainer.AuthSession])
 ):
-    return create
+    if await RedisService.getUser(key = User.Email):
+        raise HTTPException(status_code=401, detail="User already exists")
+    elif await PSQLService.CheckUser(email = User.Email):
+        raise HTTPException(status_code=401, detail="User already exists")
+    ConfirmationCode = int(''.join(sample('123456789', 6)))
+    await AuthSession.CreateUser(
+        key = User.Email, value = dict(
+            Code = ConfirmationCode,
+            User = User.model_dump()
+        )
+    )
+    return JSONResponse(
+        status_code=200,
+        content=dict(
+            ConfirmationCode = ConfirmationCode
+        )
+    )
 
-@AuthRouter.post('/Confirm')
-async def Confirm(
-    confirm: ConfirmUser = Depends(confirmUser)
+
+@router.post("/ConfirmUser", response_model=None)
+@inject
+async def ConfirmUser(
+    User: Confirm, request: Request, response: Response,
+    PSQLService: UserService = Depends(Provide[PSQLContainer.UserSevice]),
+    RedisService: Service = Depends(Provide[RedisContainer.Service]),
+    AuthSession: Service = Depends(Provide[SessionContainer.AuthSession]),
+    JWTService: JWTAuth = Depends(Provide[JWTContainer.JWT])
 ):
-    return confirm
+    session: Dict = await AuthSession.getUser(key = User.Email)
+    if not session:
+        raise HTTPException(status_code=401, detail="Session not found")
+    
+    Date = str(datetime.now())
+    UUID = str(uuid4())
+    UserIp = str(request.client.host)
 
-@AuthRouter.post('/Login')
+    if User.Code != session['Code']:
+        raise HTTPException(status_code=401, detail="Invalid confirmation code")
+    
+    result: Dict = session['User']
+    result.update(
+        updatedData:= dict(
+            LastLogin = Date,
+            UserUUID = UUID
+        )
+    )
+    AccessToken = await JWTService.encodeToken(payload=updatedData, type='access')
+    RefreshToken = await JWTService.encodeToken(payload=dict(UUID = UUID), type='refresh')
+    await AuthSession.DeleteUser(key = User.Email)
+    await RedisService.CreateUser(key = User.Email, value = result)
+    await PSQLService.CreateUser(User = result)
+    await PSQLService.AddIp(UUID = UUID, Ip = UserIp)
+    Response.set_cookie(key='RefreshToken', value=RefreshToken, httponly=True)
+    return JSONResponse(
+        status_code=200,
+        content=dict(
+            UUID = UUID,
+            AccessToken = AccessToken
+        )
+    )
+
+
+@router.post("/Login", response_model=None)
+@inject
 async def Login(
-    login: LoginUser = Depends(loginUser)
+    UserModel: Login,
+    PSQLService: UserService = Depends(Provide[PSQLContainer.UserSevice]),
+    RedisService: Service = Depends(Provide[RedisContainer.Service])
 ):
-    return login
+    User = await RedisService.getUser(key = UserModel.Email)
+    if not User:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    User = await PSQLService.CheckUser(email = UserModel.Email)
+    if not User:
+        raise HTTPException(status_code=401, detail="User not found")
+    
+    if UserModel.Password != User['User']['Password']:
+        raise HTTPException(status_code=401, detail="Invalid password")
+    
+    return JSONResponse(
+        status_code=200,
+        content=dict(
+           User = User
+        )
+    )
+

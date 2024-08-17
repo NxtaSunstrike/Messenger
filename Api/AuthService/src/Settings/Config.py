@@ -5,7 +5,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
-BaseDir = Path('Api')
+BaseDir = Path('.')
 
 from dotenv import load_dotenv
 
@@ -32,7 +32,5 @@ class Settings(BaseSettings):
     AccessExpire: int = Field(env.get('ACCESS_EXPIRE'))
     RefreshExpire: int = Field(env.get('REFRESH_EXPIRE'))
 
-
-Config = Settings()
    
 

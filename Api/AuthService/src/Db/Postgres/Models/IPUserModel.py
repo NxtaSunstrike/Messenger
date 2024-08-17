@@ -16,7 +16,6 @@ class UserIP(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key = True, autoincrement = True)
     UserUUID: Mapped[str] = mapped_column(ForeignKey('users.UserUUID'))
-    
     UserIP: Mapped[str] = mapped_column(String)
 
     User: Mapped['User'] = relationship(

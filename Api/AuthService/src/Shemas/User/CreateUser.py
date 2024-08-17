@@ -12,9 +12,13 @@ class CreateUser(BaseModel):
 
 class ConfirmUser(BaseModel):
     Email: str
-    ConfirmationCode: int
+    Code: int
 
 
 class Login(BaseModel):
     Email: EmailStr
     Password: str
+
+
+
+

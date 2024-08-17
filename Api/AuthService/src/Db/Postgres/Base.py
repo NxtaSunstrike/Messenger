@@ -1,37 +1,41 @@
 from typing import AsyncGenerator
 
+from contextlib import asynccontextmanager
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 
-from Settings.Config import Config
 
 
 class Base(DeclarativeBase):
     pass
 
 
-Engine = create_async_engine(
-    url = 'postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}'.format(
-        USER = Config.POSTGRES_USER,
-        PASSWORD = Config.POSTGRES_PASSWORD,
-        HOST = Config.POSTGRES_HOST,
-        PORT = Config.POSTGRES_PORT,
-        DB = Config.POSTGRES_DB
-    ),
-    echo = True
-)
+class Database:
 
-Async_Session = sessionmaker(
-    Engine, class_ = AsyncSession, expire_on_commit=False
-)
 
-async def GetSession()->AsyncGenerator[AsyncSession, None]:
-    async with Async_Session() as session:
-        yield session
+    def __init__(self, url: str) -> None: 
+        self.Engine = create_async_engine(url = url, echo = True)
 
-async def InitModels():
-    async with Engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
-        await connection.run_sync(Base.metadata.create_all)
+        self.Async_Session = sessionmaker(
+            bind = self.Engine, class_ = AsyncSession, expire_on_commit=False
+        )
+
+    @asynccontextmanager
+    async def GetSession(self)->AsyncGenerator[AsyncSession, None]:
+        session: AsyncSession = self.Async_Session()
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+    async def InitModels(self) -> None:
+        async with self.Engine.begin() as connection:
+            await connection.run_sync(Base.metadata.drop_all)
+            await connection.run_sync(Base.metadata.create_all)

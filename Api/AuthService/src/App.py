@@ -1,25 +1,51 @@
-import typing
-
 from fastapi import FastAPI
 from fastapi import Depends
 
 from contextlib import asynccontextmanager
-
-from Db.Postgres.Base import InitModels
 
 from Db.Postgres.Models.UserModel import *
 from Db.Postgres.Models.IPUserModel import *
 from Db.Postgres.Models.UserAgents import *
 from Db.Postgres.Models.UserAvatars import *
 
-from Middleware.RequestsMiddleware import LimitRequestsMiddleware
+from Di.Containers import RedisContainer
+from Di.Containers import SessionContainer
+from Di.Containers import PSQLContainer
+from Di.Containers import JWTContainer
 
-from Routers.Auth import AuthRouter
+from Settings.Config import Settings
+
+from Routers import Auth
 
 
 @asynccontextmanager
 async def lifespan(App: FastAPI):
-    await InitModels()
+    Config = Settings()
+    redis = RedisContainer()
+    session = SessionContainer()
+    psql = PSQLContainer()
+    jwt = JWTContainer()
+
+    redis.config.url.from_value(f"redis://{Config.REDIS_HOST}:{Config.REDIS_PORT}/1")
+    session.config.url.from_value(f"redis://{Config.REDIS_HOST}:{Config.REDIS_PORT}/2")
+
+    psql.config.url.from_value('postgresql+asyncpg://{USER}:{PASSWORD}@{HOST}:{PORT}/{DB}'.format(
+        USER=Config.POSTGRES_USER,
+        PASSWORD=Config.POSTGRES_PASSWORD,
+        HOST=Config.POSTGRES_HOST,
+        PORT=Config.POSTGRES_PORT,
+        DB=Config.POSTGRES_DB
+    ))
+    
+    jwt.config.secret_key.from_value(Config.PrivateKey.read_text())
+    jwt.config.algorithm.from_value(Config.Algorithm)
+    jwt.config.access_expire.from_value(Config.AccessExpire)
+    jwt.config.refresh_expire.from_value(Config.RefreshExpire)
+    jwt.config.public_key.from_value(Config.PublicKey.read_text())
+
+    db = psql.Db()
+    await db.InitModels()
+
     yield
 
 App=FastAPI(
@@ -29,4 +55,4 @@ App=FastAPI(
 )
 
 # App.add_middleware(LimitRequestsMiddleware)
-App.include_router(AuthRouter)
+App.include_router(Auth.router)
