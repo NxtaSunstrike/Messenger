@@ -7,10 +7,6 @@ from pydantic import Field
 
 BaseDir = Path('.')
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 class Settings(BaseSettings):
     POSTGRES_HOST: str = Field(env.get('POSTGRES_HOST'))
     POSTGRES_PORT: str = Field(env.get('POSTGRES_PORT'))
@@ -26,8 +22,8 @@ class Settings(BaseSettings):
     RABBITMQ_HOST: str = Field(env.get('RABBITMQ_HOST'))
     RABBITMQ_PORT: str = Field(env.get('RABBITMQ_PORT'))
 
-    PublicKey: Path = BaseDir / 'AuthService' / 'jwt-public.pem'
-    PrivateKey: Path = BaseDir / 'AuthService' / 'jwt-private.pem'
+    PublicKey: Path = BaseDir / '..' / 'jwt-public.pem'
+    PrivateKey: Path = BaseDir / '..' / 'jwt-private.pem'
     Algorithm: str = Field(env.get('ALGORITHM'))
     AccessExpire: int = Field(env.get('ACCESS_EXPIRE'))
     RefreshExpire: int = Field(env.get('REFRESH_EXPIRE'))

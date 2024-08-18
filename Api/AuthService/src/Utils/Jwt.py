@@ -1,5 +1,4 @@
-from jwt import JWT
-from jwt.algorithms import Algorithm
+import jwt
 
 from datetime import datetime, timedelta
 
@@ -15,23 +14,22 @@ class JWTAuth:
         self.secret_key = secret_key
         self.access_expire = access_expire
         self.refresh_expire = refresh_expire
-        self._JWT = JWT()
 
     
     async def decodeToken(self, token: str):
-        return self._JWT.decode(token = token, key = self.public_key, algorithms = [self.alghorithm])
+        return jwt.decode(token = token, key = self.public_key, algorithms = [self.alghorithm])
 
 
     async def encodeToken(self, payload: dict, type: str):
         data = payload.copy()
         if type == 'access':
-            expire = datetime.now() + timedelta(minutes=self.access_expire)
+            expire = str(datetime.now() + timedelta(minutes=self.access_expire))
         elif type == 'refresh':
-            expire = datetime.now() + timedelta(days=self.refresh_expire)
+            expire = str(datetime.now() + timedelta(days=self.refresh_expire))
         data.update(
             dict(
                 expire = expire, type = type
             )
         )
-        return self._JWT.encode(payload = data, key = self.secret_key, alg = self.alghorithm)
+        return jwt.encode(payload = data, key = self.secret_key, algorithm = self.alghorithm)
 

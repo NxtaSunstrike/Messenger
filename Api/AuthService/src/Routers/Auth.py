@@ -28,6 +28,7 @@ from Db.Postgres.Crud.Services import UserService
 from Db.Redis.RedisClient import Service
 
 from Utils.Jwt import JWTAuth
+from datetime import timedelta
 
 
 router = APIRouter()
@@ -92,11 +93,13 @@ async def ConfirmUser(
     await RedisService.CreateUser(key = User.Email, value = result)
     await PSQLService.CreateUser(User = result)
     await PSQLService.AddIp(UUID = UUID, Ip = UserIp)
-    Response.set_cookie(key='RefreshToken', value=RefreshToken, httponly=True)
+    response.set_cookie(
+        key='RefreshToken', value=RefreshToken, httponly=False, expires = 60*60*24*30
+    )
     return JSONResponse(
         status_code=200,
         content=dict(
-            UUID = UUID,
+            User = result,
             AccessToken = AccessToken
         )
     )
@@ -105,7 +108,8 @@ async def ConfirmUser(
 @router.post("/Login", response_model=None)
 @inject
 async def Login(
-    UserModel: Login,
+    UserModel: Login, response: Response,
+    JWTService: JWTAuth = Depends(Provide[JWTContainer.JWT]),
     PSQLService: UserService = Depends(Provide[PSQLContainer.UserSevice]),
     RedisService: Service = Depends(Provide[RedisContainer.Service])
 ):
@@ -119,11 +123,22 @@ async def Login(
     
     if UserModel.Password != User['User']['Password']:
         raise HTTPException(status_code=401, detail="Invalid password")
-    
+    UUID = User['User']['UserUUID']
+    Date = str(datetime.now())
+    RefreshToken = await JWTService.encodeToken(
+        payload=dict(UUID = UUID), type='refresh'
+    )
+    AccessToken = await JWTService.encodeToken(
+        payload = dict(UUID = UUID, LastLogin = Date), type='access'
+    )
+    response.set_cookie(
+        key='RefreshToken', value=RefreshToken, httponly=False, expires = 60*60*24*30
+    )
     return JSONResponse(
         status_code=200,
         content=dict(
-           User = User
+           User = User,
+           AccessToken = AccessToken
         )
     )
 

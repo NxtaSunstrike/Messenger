@@ -75,3 +75,24 @@ services:
     depends_on:
       - authdb
       - authredis
+
+  emailapp:
+    build: 
+      context: Api/EmailService
+    env_file:
+      - Api/EmailService/.env-non-dev
+    container_name: email-app
+    ports:
+      - 8888
+    depends_on:
+      - resultredis
+      - rabbitmq
+
+  resultredis:
+    image: redis:latest
+    container_name: redis-results
+    env_file:
+      - Api/EmailService/.env-non-dev
+    command: --port 2002
+    expose:
+      - 2002

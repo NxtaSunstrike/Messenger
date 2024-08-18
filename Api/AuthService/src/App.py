@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi import Depends
+from fastapi.middleware.cors import CORSMiddleware
 
 from contextlib import asynccontextmanager
 
@@ -56,3 +57,10 @@ App=FastAPI(
 
 # App.add_middleware(LimitRequestsMiddleware)
 App.include_router(Auth.router)
+App.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
