@@ -4,3 +4,8 @@ from fastapi import HTTPException
 
 
 router = APIRouter()
+
+
+@router.get("/Refresh")
+async def refresh():
+    return await ...

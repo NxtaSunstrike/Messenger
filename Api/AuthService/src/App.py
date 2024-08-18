@@ -17,6 +17,7 @@ from Di.Containers import JWTContainer
 from Settings.Config import Settings
 
 from Routers import Auth
+from Routers import JWT
 
 
 @asynccontextmanager
@@ -57,6 +58,7 @@ App=FastAPI(
 
 # App.add_middleware(LimitRequestsMiddleware)
 App.include_router(Auth.router)
+App.include_router(JWT.router)
 App.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

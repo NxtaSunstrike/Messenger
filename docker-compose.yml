@@ -35,16 +35,21 @@ services:
   #   depends_on:
   #     - zookeeper
   
-  # rabbit-auth:
-  #   image: rabbitmq:3.10.7-management
-  #   container_name: rabbit-auth
-  #   hostname: rabbit-auth
-  #   restart: always
-  #   env_file:
-  #     - Api/AuthService/.env-non-dev
-  #   ports:
-  #     - 3001:15672
-
+  rabbit:
+    image: rabbitmq:3.10.7-management
+    container_name: rabbit-auth
+    env_file:
+      - Api/Tasks/.env-non-dev
+    ports:
+      - 15672:15672
+      - 5672:5672
+    hostname: rabbit
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics check_running -q"]
+      interval: 10s
+      timeout: 60s
+      retries: 5
+      start_period: 10s
   
   authredis:
     image: redis:latest
@@ -73,26 +78,29 @@ services:
     ports:
       - 9999:8000
     depends_on:
+      - rabbit
       - authdb
       - authredis
+      - resultredis
 
   emailapp:
     build: 
-      context: Api/EmailService
+      context: Api/Tasks
     env_file:
-      - Api/EmailService/.env-non-dev
+      - Api/Tasks/.env-non-dev
     container_name: email-app
     ports:
-      - 8888
+      - 8888:8000
     depends_on:
-      - resultredis
-      - rabbitmq
+      rabbit:
+        condition: service_healthy
+
 
   resultredis:
     image: redis:latest
     container_name: redis-results
     env_file:
-      - Api/EmailService/.env-non-dev
+      - Api/Tasks/.env-non-dev
     command: --port 2002
     expose:
       - 2002
