@@ -3,17 +3,18 @@ from faststream.rabbit import RabbitBroker, RabbitRouter
 
 class RabbitConfig:
 
-    def __init__(self, 
-        User: str, Password: str, Host: str, Port: str, router: RabbitRouter
+    def __init__(
+        self, User: str, Password: str, Host: str, Port: int, router: RabbitRouter
     ) -> None:
-        self.User = User
-        self.Password = Password
-        self.Host = Host
-        self.Port = Port
-        self.router = router
+        self.User: str = User
+        self.Password: str = Password
+        self.Host: str = Host
+        self.Port: int = Port
+        self.router: RabbitRouter = router
 
 
     def Broker(self) -> RabbitBroker:
+
         Broker = RabbitBroker(
             url=f"amqp://{self.User}:{self.Password}@{self.Host}:{self.Port}/",
         )

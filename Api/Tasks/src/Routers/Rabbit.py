@@ -5,3 +5,6 @@ from Settings.Config import Settings
 Config = Settings()
 
 router = RabbitRouter()
+
+
+

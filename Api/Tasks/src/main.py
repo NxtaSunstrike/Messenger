@@ -1,13 +1,9 @@
-from faststream.asgi import AsgiFastStream
+from Di.Application import ApplicationContainer
 
 
-app = AsgiFastStream(
-    title='FastStream Demo', 
-    version='1.0.0', 
-    asyncapi_path='/docs',
-)
+def createApp():
+    Container = ApplicationContainer()
+    App = Container.Application()
+    return App
 
-
-
-
-
+app = createApp()

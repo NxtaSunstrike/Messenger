@@ -1,11 +1,12 @@
 from dependency_injector import containers, providers
 
-f
+from Brokers.BrokerConfig import RabbitConfig
 
 from Routers import Rabbit
 
 
 class RabbitContainer(containers.DeclarativeContainer):
+
     config = providers.Configuration()
 
     rabbitmq = providers.Singleton(
