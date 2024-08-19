@@ -50,16 +50,16 @@ async def lifespan(App: FastAPI):
 
     yield
 
-App=FastAPI(
+app=FastAPI(
     lifespan=lifespan,
     title='Authorization Microservice',
     version='1.0.0'
 )
 
 # App.add_middleware(LimitRequestsMiddleware)
-App.include_router(Auth.router)
-App.include_router(JWT.router)
-App.add_middleware(
+app.include_router(Auth.router)
+app.include_router(JWT.router)
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,

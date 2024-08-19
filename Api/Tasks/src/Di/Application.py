@@ -5,6 +5,7 @@ from Settings.Config import Settings
 from App.Application import Application
 
 from Di.Rabbit import RabbitContainer
+from Di.Messages import MessagesContainer
 
 
 
@@ -20,5 +21,6 @@ class ApplicationContainer(containers.DeclarativeContainer):
         Application,
         config = Settings.provided,
         broker = RabbitContainer,
+        message = MessagesContainer
     )
 

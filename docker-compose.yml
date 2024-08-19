@@ -69,6 +69,7 @@ services:
     expose:
       - 1001
 
+
   authapp:
     build: 
       context: Api/AuthService
@@ -78,10 +79,8 @@ services:
     ports:
       - 9999:8000
     depends_on:
-      - rabbit
       - authdb
       - authredis
-      - resultredis
 
   emailapp:
     build: 

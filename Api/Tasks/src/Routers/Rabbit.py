@@ -1,17 +1,26 @@
 from faststream.rabbit.router import RabbitRouter
-
-from fastapi import Depends
+from faststream import Depends
 
 from dependency_injector.wiring import inject, Provide
+
+from Di.Messages import MessagesContainer
+
+from Logic.Messages import Messages
+
+from Shemas.EmailShema import SendEmail
 
 
 router = RabbitRouter()
 
 
-@router.subscriber('send-email')
+@router.subscriber(queue = 'send-email')
 @inject
-async def CreateEmail(data: dict) -> None:
-    return ...
+async def CreateEmail(
+    Body: SendEmail, Email: Messages = Depends(Provide[MessagesContainer.Messages])
+) -> None:
+    return await Email.SendEmail(
+        subscriber = Body.subscriber, content = Body.content
+    )
 
 
 @router.subscriber('send-sms')
