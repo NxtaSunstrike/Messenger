@@ -16,8 +16,14 @@ class Base(DeclarativeBase):
 class Database:
 
 
-    def __init__(self, url: str) -> None: 
-        self.Engine = create_async_engine(url = url, echo = True)
+    def __init__(
+        self, host: str, port: int, password: str, user: str, database: str
+    ) -> None: 
+        self.Engine = create_async_engine(
+            url = 'postgresql+asyncpg://{user}:{password}@{hots}:{port}/{db}'.format(
+                user = user, password = password, hots = host, port = port, db = database
+            ), 
+        echo = True)
 
         self.Async_Session = sessionmaker(
             bind = self.Engine, class_ = AsyncSession, expire_on_commit=False
@@ -39,3 +45,4 @@ class Database:
         async with self.Engine.begin() as connection:
             await connection.run_sync(Base.metadata.drop_all)
             await connection.run_sync(Base.metadata.create_all)
+

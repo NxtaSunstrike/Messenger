@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     RABBITMQ_USER: str = Field(env.get('RABBITMQ_DEFAULT_USER'))
     RABBITMQ_PASSWORD: str = Field(env.get('RABBITMQ_DEFAULT_PASS'))
     RABBITMQ_HOST: str = Field(env.get('RABBITMQ_HOST'))
-    RABBITMQ_PORT: str = Field(env.get('RABBITMQ_PORT'))
+    RABBITMQ_PORT: int = Field(env.get('RABBITMQ_PORT'))
 
     PublicKey: Path = BaseDir / '..' / 'jwt-public.pem'
     PrivateKey: Path = BaseDir / '..' / 'jwt-private.pem'

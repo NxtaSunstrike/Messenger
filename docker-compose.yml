@@ -68,7 +68,7 @@ services:
     command: -p 1001
     expose:
       - 1001
-
+  
 
   authapp:
     build: 
@@ -79,8 +79,12 @@ services:
     ports:
       - 9999:8000
     depends_on:
-      - authdb
-      - authredis
+      authdb:
+        condition: service_started
+      authredis:
+        condition: service_started
+      rabbit:
+        condition: service_healthy
 
   emailapp:
     build: 

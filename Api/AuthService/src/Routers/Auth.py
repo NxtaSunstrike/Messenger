@@ -19,10 +19,10 @@ from Shemas.User.CreateUser import Login
 
 from dependency_injector.wiring import inject, Provide
 
-from Di.Containers import PSQLContainer
-from Di.Containers import RedisContainer
-from Di.Containers import SessionContainer
-from Di.Containers import JWTContainer
+from Di.SQLContainer import PSQLContainer
+from Di.RedisContainer import RedisContainer
+from Di.SessionContainer import SessionContainer
+from Di.JWTContainer import JWTContainer
 
 from Db.Postgres.Crud.Services import UserService
 from Db.Redis.RedisClient import Service
@@ -55,7 +55,7 @@ async def CreateUser(
     return JSONResponse(
         status_code=200,
         content=dict(
-            ConfirmationCode = ConfirmationCode
+            Message = "Confirmation code has been sent to your email"
         )
     )
 
